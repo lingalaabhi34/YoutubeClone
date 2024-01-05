@@ -1,162 +1,239 @@
-const API_KEY = "AIzaSyCJa99QqSC8W57mcnFhUu1TtM5JYtKJDrU";
+const videoPage = document.querySelector(".video-page");
+
+const searchButton = document.querySelector(".search-button");
+const searchInput = document.querySelector(".search-actual-input");
+
+const themeChanger = document.getElementById("theme-changer");
+
+const customNav = document.querySelector("custom-navbar");
+// console.log(videoPage);
+
+const API_KEY = "AIzaSyDijmeEgM8AIsrm8BlNzMSLySkfJ4antY0";
 const BASE_URL = "https://www.googleapis.com/youtube/v3";
-async function fetchData(searchQuery, maxItems) {
-  let response = await fetch(
-    `${BASE_URL}/search?key=${API_KEY}&q=${searchQuery}&maxResults=${maxItems}&part=snippet`
-  );
-  //   console.log(response);
-  // let response = await fetch("./dummy.json");
-  let data = await response.json();
-  let arr = data.items;
-  // console.log(arr);
-  // getVideoInfo('JhIBqykjzbs');
-  displayCards(arr, scrollableRightSections);
-}
-window.addEventListener("load", () => {
-  fetchData("", 12);
-});
-searchDiv.addEventListener("click", () => {
-  // console.log(searchInput.value);
-  let Value = searchInput.value;
-  // console.log(searchInput.value);
-  fetchData(Value, 20);
-  searchInput.value = "";
-});
-async function getVideoInfo(videoId) {
-  let response = await fetch(
-    `${BASE_URL}/videos?key=${API_KEY}&part=statistics&id=${videoId}`
-  );
-  // let response = await fetch("./videoInfoDummy.json");
-  let data = await response.json();
-  return data.items;
-  // let videoInfo = data.items;
-  // console.log(videoInfo);
-}
-// getVideoInfo('JhIBqykjzbs');
-async function getChannelLogo(channelId) {
-  const response = await fetch(
-    `${BASE_URL}/channels?key=${API_KEY}&part=snippet&id=${channelId}`
-  );
-  // let response = await fetch("./channelLogodummy.json");
-  const data = await response.json();
-  return data.items;
-}
-// getChannelLogo('UCt2JXOLNxqry7B_4rRZME3Q');
-// get no of subscribers
-async function getSubscription(channelid) {
-  // console.log(channelid);
-  let response = await fetch(
-    `${BASE_URL}/channels?key=${API_KEY}&id=${channelid}&part=statistics`
-  );
-  // let response = await fetch("./subscribers.json");
-  let data = await response.json();
-  return data.items;
-}
-async function displayCards(data, displayBody) {
-  displayBody.innerHTML = "";
-  for (const ele of data) {
-    //  console.log(ele);
-    let viewCountObj = await getVideoInfo(ele.id.videoId);
-    //    console.log(viewCountObj);
-    ele.viewObject = viewCountObj; // enjected array as object in ele object
-    let channelInfoObject = await getChannelLogo(ele.snippet.channelId);
-    //    console.log(channelInfoObject);
-    ele.channelObject = channelInfoObject;
-    let subscribers = await getSubscription(ele.snippet.channelId);
-    ele.subscriberCount = subscribers;
-    //    console.log(ele.subscriberCount[0].statistics.subscriberCount);
-    let displayDuration = calDuration(ele.snippet.publishedAt);
-    let videoCard = document.createElement("a");
-    videoCard.className = "videoCard";
-    videoCard.href = `./selectedVideo.html?videoId=${ele.id.videoId}`;
-    // console.log(ele.id.videoId);
-    // creating session storage
-    videoCard.addEventListener("click", () => {
-      const InfoSelectedVideo = {
-        videoTitle: `${ele.snippet.title}`,
-        channelLogo: `${ele.channelObject[0].snippet.thumbnails.high.url}`,
-        channelName: `${ele.snippet.channelTitle}`,
-        likeCount: `${ele.viewObject[0].statistics.viewCount}`,
-        channelID: `${ele.snippet.channelId}`,
-        subscribers: `${ele.subscriberCount[0].statistics.subscriberCount}`,
-      };
-      sessionStorage.setItem(
-        "selectedVideoInformation",
-        JSON.stringify(InfoSelectedVideo)
-      );
-    });
-    videoCard.innerHTML = `<img src="${ele.snippet.thumbnails.high.url}">
-        <div class="channel">
-            <img src="${ele.channelObject[0].snippet.thumbnails.high.url}" >
-            <h4>${ele.snippet.title}</h4>
-        </div>
-        <div class="channelInfo">
-            <p>${ele.snippet.channelTitle}</p>
-            <p> ${calculateViews(
-              ele.viewObject[0].statistics.viewCount
-            )} views , ${displayDuration} ago </p>
-        </div>`;
-    displayBody.appendChild(videoCard);
-  }
-}
-// cal duration
-function calDuration(publisedDate) {
-  let displayTime;
-  let publisedAt = new Date(publisedDate);
-  let MiliSecFromPublised = publisedAt.getTime();
-  let currentTime = new Date();
-  let currentTimeInMiliSec = currentTime.getTime();
-  let duration = currentTimeInMiliSec - MiliSecFromPublised;
-  let days = parseInt(duration / 86400000);
-  if (days < 1) {
-    let hours = parseInt(duration / 3600000);
-    displayTime = hours + " " + "hours";
-  } else if (days > 6 && days <= 29) {
-    let weeks = parseInt(days / 7);
-    displayTime = weeks + " " + "weeks";
-  } else if (days > 29 && days <= 364) {
-    let months = parseInt(days / 30);
-    displayTime = months + " " + "months";
-  } else if (days > 364) {
-    let years = parseInt(days / 365);
-    displayTime = years + " " + "years";
+
+async function searchVideos(searchQuery) {
+  console.log(searchQuery);
+  if (searchQuery == "" || searchQuery == undefined) {
+    document.title = "Youtube";
   } else {
-    displayTime = days + " " + "days";
+    document.title = `${searchQuery} - Youtube`;
   }
-  return displayTime;
-}
-// cal views
-function calculateViews(viewCount) {
-  let displayViews;
-  let count;
-  if (viewCount < 1000) {
-    displayViews = viewCount;
-  } else if (viewCount >= 1000 && viewCount <= 999999) {
-    displayViews = (viewCount / 1000).toFixed(1) + " " + "K";
-  } else if (viewCount >= 1000000) {
-    displayViews = (viewCount / 1000000).toFixed(1) + " " + "M";
-  }
-  return displayViews;
-}
-// toggle in menues
-let menuButton = document.getElementById("menubar");
-// console.log(menuButton);
-menuButton.addEventListener("click", showSmallMenuOptions);
-//
-function showSmallMenuOptions() {
-  let menuCards = document.getElementsByClassName("mo");
-  // console.log(menuCards);
-  for (let menu of menuCards) {
-    if (menu.classList.contains("menuCards")) {
-      menu.classList.remove("menuCards");
-      menu.classList.add("MENUCARDS");
-      leftSection.style.flex = 1.5;
-      copyRightSystem.style.display = "block";
-    } else {
-      menu.classList.remove("MENUCARDS");
-      menu.classList.add("menuCards");
-      leftSection.style.flex = 0.5;
-      copyRightSystem.style.display = "none";
-    }
+  try {
+    let url = `${BASE_URL}/search?key=${API_KEY}&q=${searchQuery}&part=snippet&maxResults=30`;
+    const response = await fetch(url, {
+      method: "GET",
+    });
+    const data = await response.json();
+    console.log(data.items);
+    videoPage.innerHTML = "";
+    displayVideo(data.items);
+  } catch (err) {
+    console.log(err);
   }
 }
+
+function displayVideo(data) {
+  data.map(async (item) => {
+    // console.log(item.snippet.channelId);
+
+    const channedInfo = await channelDetails(item.snippet.channelId);
+
+    const channelThumbnail = channedInfo.items[0].snippet.thumbnails.high.url;
+
+    const videoInfo = await videoDetailS(item.id.videoId);
+
+    const publishDate = displayDate(videoInfo.items[0].snippet.publishedAt);
+
+    const viewsData = converViews(videoInfo.items[0].statistics.viewCount);
+
+    const videoDiv = document.createElement("div");
+    videoDiv.className = "video";
+    videoDiv.addEventListener("click", () => {
+      openVideo(item);
+    });
+    videoDiv.innerHTML = `<div class="thumbnail">
+    <img
+      src= ${item.snippet.thumbnails.high.url}
+      alt=""
+      width="100%"
+      
+    />
+  </div>
+  <div class="title">
+    <div class="channel-profile">
+      <div class="channel">
+        <img
+          src=${channelThumbnail}
+          alt=""
+          width="100%"
+          style="border-radius: 50%"
+        />
+      </div>
+    </div>
+    <div class="video-desc">
+      <div class="video-info">
+        ${item.snippet.title}
+      </div>
+
+      <div class="channel-name">
+        <h3>${item.snippet.channelTitle}</h3>
+        <h2>${viewsData} views · ${publishDate}</h2>
+      </div>`;
+
+    videoPage.appendChild(videoDiv);
+  });
+}
+
+async function videoDetailS(videoId) {
+  try {
+    let url = `${BASE_URL}/videos?key=${API_KEY}&part=snippet,contentDetails,statistics&id=${videoId}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+    });
+    const data = await response.json();
+
+    // const dataToSend = JSON.stringify(data);
+
+    return data;
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function channelDetails(channel_id) {
+  try {
+    let url = `${BASE_URL}/channels?key=${API_KEY}&part=snippet,statistics,contentOwnerDetails&id=${channel_id}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+    });
+    const data = await response.json();
+    return data;
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+searchVideos(localStorage.getItem("searchFromVideo"));
+
+// videoDetailS("IIuRc8IiSuE");
+
+function converViews(data) {
+  if (data / 1000 >= 1 && data / 1000 <= 999) {
+    return (data / 1000).toFixed(1) + "K";
+  }
+  if (data / 1000000 >= 1 && data / 1000000 <= 999) {
+    return (data / 1000000).toFixed(1) + "M";
+  }
+  if (data / 1000000000 >= 1 && data / 1000000000 <= 999) {
+    return (data / 1000000000).toFixed(1) + "B";
+  } else {
+    return data;
+  }
+}
+
+function displayDate(data) {
+  const millisecondsPerSecond = 1000;
+  const millisecondsPerMinute = millisecondsPerSecond * 60;
+  const millisecondsPerHour = millisecondsPerMinute * 60;
+  const millisecondsPerDay = millisecondsPerHour * 24;
+
+  const start = new Date(data);
+  const end = new Date();
+
+  const timeDifference = Math.abs(end - start);
+
+  const years = Math.floor(timeDifference / (365.25 * millisecondsPerDay));
+  const months = Math.floor(
+    (timeDifference % (365.25 * millisecondsPerDay)) /
+      (30.44 * millisecondsPerDay)
+  );
+  const weeks = Math.floor(timeDifference / (7 * millisecondsPerDay));
+  const days = Math.floor(timeDifference / millisecondsPerDay);
+  const hours = Math.floor(
+    (timeDifference % millisecondsPerDay) / millisecondsPerHour
+  );
+  const minutes = Math.floor(
+    (timeDifference % millisecondsPerHour) / millisecondsPerMinute
+  );
+
+  if (years !== 0) {
+    return years + " years ago";
+  }
+
+  if (months !== 0) {
+    return months + " months ago";
+  }
+
+  if (weeks !== 0) {
+    return weeks + " weeks ago";
+  }
+
+  if (days !== 0) {
+    return days + " days ago";
+  }
+
+  if (hours !== 0) {
+    return hours + " hours ago";
+  }
+
+  if (minutes !== 0) {
+    return minutes + " minutes ago";
+  }
+}
+
+searchButton.addEventListener("click", () => {
+  // console.log(searchInput.value);
+
+  searchVideos(searchInput.value);
+});
+
+searchInput.addEventListener("keyup", (event) => {
+  if (event.key === "Enter") searchVideos(searchInput.value);
+});
+
+function searchFilters(event) {
+  searchVideos(event.target.innerText);
+}
+
+function openVideo(item) {
+  const jsonString = JSON.stringify(item);
+  localStorage.setItem("videoToWatch", jsonString);
+  window.location.href = "./video.html";
+}
+
+// themeChanger.addEventListener("click", () => {
+//   document.getElementById("theme").classList.toggle("white-mode");
+//   // customNav.classList.toggle("white-mode");
+//   console.log(customNav);
+// });
+
+//dark-mode
+document.documentElement.style.setProperty("--theme-color", "#0f0f0f");
+
+document.documentElement.style.setProperty("--theme-color-text", "#fff");
+
+document.documentElement.style.setProperty("--theme-color-light", "#292929");
+
+document.documentElement.style.setProperty("--theme-color-light-text", "#aaa");
+
+document.documentElement.style.setProperty("--theme-color-hover", "#292929");
+
+document.documentElement.style.setProperty("--theme-color-logo", "#fff");
+
+//white-mode
+// document.documentElement.style.setProperty("--theme-color", "#fff");
+
+// document.documentElement.style.setProperty("--theme-color-text", "#000");
+
+// document.documentElement.style.setProperty("--theme-color-light", "#fff");
+
+// document.documentElement.style.setProperty(
+//   "--theme-color-light-text",
+//   "#7e7e7e"
+// );
+
+// document.documentElement.style.setProperty("--theme-color-hover", "#f2f2f2");
+
+// document.documentElement.style.setProperty("--theme-color-logo", "#000");
